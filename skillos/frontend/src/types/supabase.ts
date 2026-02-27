@@ -533,6 +533,33 @@ export interface Database {
                 }
                 Relationships: []
             }
+            interview_sessions: {
+                Row: {
+                    id: string
+                    user_id: string
+                    created_at: string
+                    session_config: Json
+                    transcript: Json
+                    evaluation: Json
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    created_at?: string
+                    session_config: Json
+                    transcript: Json
+                    evaluation?: Json
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    created_at?: string
+                    session_config?: Json
+                    transcript?: Json
+                    evaluation?: Json
+                }
+                Relationships: []
+            }
         }
         Views: {
             [_ in never]: never

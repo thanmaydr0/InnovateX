@@ -21,6 +21,7 @@ import SkillHeatmap from './features/heatmap/SkillHeatmap'
 import ResumeAnalyser from './features/resume/ResumeAnalyser'
 import LearningPathway from './features/learning/LearningPathway'
 import CodingPractice from './features/coding/CodingPractice'
+import MockInterview from './features/interview/MockInterview'
 
 import { Toaster } from 'sonner'
 
@@ -57,6 +58,7 @@ function App() {
             <Route path="/resume" element={<ResumeAnalyser />} />
             <Route path="/learning" element={<LearningPathway />} />
             <Route path="/coding" element={<CodingPractice />} />
+            <Route path="/interview" element={<MockInterview />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
