@@ -609,7 +609,7 @@ export default function DashboardPage() {
                                         ))}
                                     </div>
 
-                                    <Button className="w-full bg-[#23262A] hover:bg-[#2A2E33] text-[#E8E6E3] gap-2" onClick={() => navigate('/learning')}>
+                                    <Button className="w-full bg-[#23262A] hover:bg-[#2A2E33] text-[#E8E6E3] gap-2" onClick={() => navigate('/learning', { state: { autoLoad: true } })}>
                                         Continue Learning
                                         <ArrowRight className="w-4 h-4" />
                                     </Button>

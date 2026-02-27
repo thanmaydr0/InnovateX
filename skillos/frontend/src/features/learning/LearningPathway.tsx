@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     BookOpen, ChevronDown, Clock, ExternalLink,
@@ -148,6 +149,17 @@ export default function LearningPathway() {
     useEffect(() => {
         fetchSavedPathways()
     }, [fetchSavedPathways])
+
+    // ── Auto-load latest pathway when navigating from Dashboard ─────────
+    const location = useLocation()
+    useEffect(() => {
+        const state = location.state as { autoLoad?: boolean } | null
+        if (state?.autoLoad && savedPathways.length > 0 && !pathway) {
+            loadPathway(savedPathways[0])
+            // Clear the state so refresh doesn't re-trigger
+            window.history.replaceState({}, '')
+        }
+    }, [savedPathways, location.state])
 
     // ── Save to Supabase ────────────────────────────────────────────────
     const savePathwayToDb = async (pw: Pathway, prog: Record<string, boolean>) => {
