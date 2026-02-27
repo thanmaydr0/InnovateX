@@ -19,6 +19,8 @@ import { ResourcesPage } from './features/resources'
 import SkillBridgePage from './pages/SkillBridgePage'
 import SkillHeatmap from './features/heatmap/SkillHeatmap'
 import ResumeAnalyser from './features/resume/ResumeAnalyser'
+import LearningPathway from './features/learning/LearningPathway'
+import CodingPractice from './features/coding/CodingPractice'
 
 import { Toaster } from 'sonner'
 
@@ -53,6 +55,8 @@ function App() {
             <Route path="/bridge" element={<SkillBridgePage />} />
             <Route path="/heatmap" element={<SkillHeatmap />} />
             <Route path="/resume" element={<ResumeAnalyser />} />
+            <Route path="/learning" element={<LearningPathway />} />
+            <Route path="/coding" element={<CodingPractice />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

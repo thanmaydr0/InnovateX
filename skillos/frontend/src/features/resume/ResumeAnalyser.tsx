@@ -24,6 +24,10 @@ import * as Tabs from '@radix-ui/react-tabs'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { openai } from '@/lib/openai'
+import * as pdfjsLib from 'pdfjs-dist'
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker
 
 // ── Types ──────────────────────────────────────────────────────────────
 interface SectionResult {
@@ -93,9 +97,6 @@ async function extractTextFromFile(file: File): Promise<string> {
     const ext = file.name.split('.').pop()?.toLowerCase()
 
     if (ext === 'pdf') {
-        const pdfjsLib = await import('pdfjs-dist')
-        const workerModule = await import('pdfjs-dist/build/pdf.worker.min.mjs?url')
-        pdfjsLib.GlobalWorkerOptions.workerSrc = workerModule.default
         const arrayBuffer = await file.arrayBuffer()
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
         const pages: string[] = []
@@ -687,7 +688,7 @@ ${state.extractedText}`,
             {/* ── Upload Zone ───────────────────────────────────────────── */}
             {!state.file ? (
                 <motion.div
-                    {...getRootProps()}
+                    {...(({ onDrag, ...rest }) => rest)(getRootProps())}
                     animate={isDragActive ? { scale: 1.02 } : { scale: 1 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                     className={`

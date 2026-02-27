@@ -17,7 +17,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     "placeholder:text-[#4A4845]",
 
                     // Transitions
-                    "transition-all duration-[120ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]",
+                    "transition-all duration-\[120ms\] ease-\[cubic-bezier(0.25,0.1,0.25,1)\]",
 
                     // Hover - Subtle border change
                     "hover:border-[rgba(255,255,255,0.08)]",

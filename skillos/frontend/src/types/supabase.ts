@@ -476,6 +476,63 @@ export interface Database {
                 }
                 Relationships: []
             }
+            skill_market_trends: {
+                Row: {
+                    id: string
+                    skill: string
+                    demand_score: number
+                    job_count: number
+                    source: string
+                    updated_at: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    skill: string
+                    demand_score?: number
+                    job_count?: number
+                    source?: string
+                    updated_at?: string
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    skill?: string
+                    demand_score?: number
+                    job_count?: number
+                    source?: string
+                    updated_at?: string
+                    created_at?: string
+                }
+                Relationships: []
+            }
+            learning_pathways: {
+                Row: {
+                    id: string
+                    user_id: string
+                    created_at: string
+                    pathway_data: Json
+                    target_role: string | null
+                    progress_data: Json
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    created_at?: string
+                    pathway_data: Json
+                    target_role?: string | null
+                    progress_data?: Json
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    created_at?: string
+                    pathway_data?: Json
+                    target_role?: string | null
+                    progress_data?: Json
+                }
+                Relationships: []
+            }
         }
         Views: {
             [_ in never]: never

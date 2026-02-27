@@ -2,6 +2,6 @@ import OpenAI from 'openai'
 
 export const openai = new OpenAI({
     apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-    baseURL: '/api/openai/v1',
+    baseURL: `${window.location.origin}/api/openai/v1`,
     dangerouslyAllowBrowser: true
 })
