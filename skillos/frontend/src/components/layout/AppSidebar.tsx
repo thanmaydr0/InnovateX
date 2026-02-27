@@ -5,7 +5,7 @@ import {
     LayoutDashboard, ListTodo, LogOut, Settings,
     Clock, HardDrive, Cloud, Network, User,
     ChevronRight, Search, Folder, Briefcase,
-    Cpu, Sparkles, Zap, Package, Shield, Globe, FileText
+    Cpu, Sparkles, Zap, Package, Shield, Globe, FileText, BarChart3, FileScan
 } from "lucide-react"
 import { useAuth } from "@/features/auth/AuthContext"
 import { cn } from "@/lib/utils"
@@ -47,6 +47,8 @@ export function AppSidebar() {
         { icon: Globe, label: "Browser", path: "/browser" },
         { icon: FileText, label: "Resources", path: "/resources" },
         { icon: Zap, label: "Skill Bridge", path: "/bridge" },
+        { icon: BarChart3, label: "Heatmap", path: "/heatmap" },
+        { icon: FileScan, label: "Resume", path: "/resume" },
     ]
 
     return (
