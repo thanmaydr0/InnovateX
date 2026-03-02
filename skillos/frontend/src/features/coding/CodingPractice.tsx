@@ -7,6 +7,10 @@ import {
     Video, Trophy, Flame, ArrowRight, Eye
 } from 'lucide-react'
 import { openai } from '@/lib/openai'
+import { CodeEditor, type Language } from './CodeEditor'
+import { EditorTimer } from './EditorTimer'
+import { EditorToolbar } from './EditorToolbar'
+import { TestCasePanel } from './TestCasePanel'
 
 // ── Constants ──────────────────────────────────────────────────────────
 const TOPICS = [
@@ -137,7 +141,7 @@ export default function CodingPractice() {
     const [selectedTopics, setSelectedTopics] = useState<string[]>(['Arrays'])
     const [source, setSource] = useState<string>('Random')
     const [customTopic, setCustomTopic] = useState('')
-    const [language, setLanguage] = useState<string>('Python')
+    const [language, setLanguage] = useState<Language>('Python')
     const [question, setQuestion] = useState<Question | null>(null)
     const [code, setCode] = useState('')
     const [isGenerating, setIsGenerating] = useState(false)
@@ -148,6 +152,12 @@ export default function CodingPractice() {
     const [error, setError] = useState<string | null>(null)
     const [history, setHistory] = useState<HistoryEntry[]>(getHistory)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+    // Editor settings state
+    const [fontSize, setFontSize] = useState<number>(14)
+    const [tabSize, setTabSize] = useState<number>(4)
+    const [showMinimap, setShowMinimap] = useState<boolean>(false)
+    const [timerRunning, setTimerRunning] = useState<boolean>(false)
 
     const streak = useMemo(() => calculateStreak(history), [history])
     const totalSolved = useMemo(() => history.filter(h => h.solved).length, [history])
@@ -238,10 +248,11 @@ Make it realistic with 3-5 test cases, 2-3 hints, and proper starter code for al
     }
 
     // ── checkSolution ───────────────────────────────────────────────────
-    const checkSolution = async (q: Question, userCode: string, lang: string) => {
+    const checkSolution = async (q: Question, userCode: string, lang: string, isSubmit = true) => {
         if (!userCode.trim()) return
         setIsChecking(true)
         setSolutionResult(null)
+        if (isSubmit) setTimerRunning(false)
 
         try {
             const completion = await openai.chat.completions.create({
@@ -292,14 +303,16 @@ Evaluate and return JSON:
             const result: SolutionResult = JSON.parse(cleaned)
             setSolutionResult(result)
 
-            addHistoryEntry({
-                questionTitle: q.title,
-                difficulty: q.difficulty,
-                topic: q.topics[0] || 'General',
-                solved: result.isCorrect,
-                timestamp: new Date().toISOString(),
-                language: lang,
-            })
+            if (isSubmit) {
+                addHistoryEntry({
+                    questionTitle: q.title,
+                    difficulty: q.difficulty,
+                    topic: q.topics[0] || 'General',
+                    solved: result.isCorrect,
+                    timestamp: new Date().toISOString(),
+                    language: lang,
+                })
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to evaluate solution')
         } finally {
@@ -372,7 +385,7 @@ Return the same JSON structure:
         }
     }
 
-    const switchLanguage = (lang: string) => {
+    const switchLanguage = (lang: Language) => {
         setLanguage(lang)
         if (question?.starterCode[lang] && !code.trim()) {
             setCode(question.starterCode[lang])
@@ -541,16 +554,23 @@ Return the same JSON structure:
                     <div className="space-y-4">
                         {/* Title */}
                         <div className="bg-[#1A1D20] border border-[rgba(255,255,255,0.06)] rounded-xl p-5">
-                            <div className="flex items-center gap-2 mb-3 flex-wrap">
-                                <span
-                                    className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"
-                                    style={{ backgroundColor: `${diffConfig[question.difficulty].glow}20`, color: diffConfig[question.difficulty].glow }}
-                                >
-                                    {question.difficulty}
-                                </span>
-                                {question.topics.map((t, i) => (
-                                    <span key={i} className="px-2 py-0.5 rounded bg-[#22262A] text-[10px] text-[#6B6966]">{t}</span>
-                                ))}
+                            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span
+                                        className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                                        style={{ backgroundColor: `${diffConfig[question.difficulty].glow}20`, color: diffConfig[question.difficulty].glow }}
+                                    >
+                                        {question.difficulty}
+                                    </span>
+                                    {question.topics.map((t, i) => (
+                                        <span key={i} className="px-2 py-0.5 rounded bg-[#22262A] text-[10px] text-[#6B6966]">{t}</span>
+                                    ))}
+                                </div>
+                                <EditorTimer
+                                    isRunning={timerRunning}
+                                    onToggle={() => setTimerRunning(!timerRunning)}
+                                    resetDependency={question.id}
+                                />
                             </div>
                             <h2 className="text-lg font-bold text-[#E8E6E3]">{question.title}</h2>
                             {solutionResult && (
@@ -629,78 +649,30 @@ Return the same JSON structure:
                     </div>
 
                     {/* Right: Editor + Output */}
-                    <div className="space-y-4">
-                        {/* Language selector */}
-                        <div className="bg-[#1A1D20] border border-[rgba(255,255,255,0.06)] rounded-xl p-3">
-                            <div className="flex gap-1.5 overflow-x-auto">
-                                {LANGUAGES.map(l => (
-                                    <button
-                                        key={l}
-                                        onClick={() => switchLanguage(l)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0
-                                            ${language === l
-                                                ? 'bg-[#30e8bd]/15 text-[#30e8bd] border border-[#30e8bd]/30'
-                                                : 'text-[#6B6966] hover:text-[#9A9996]'
-                                            }`}
-                                    >
-                                        {l}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Code Editor */}
-                        <div className="bg-[#0a0a0a] border border-[#242424] rounded-xl overflow-hidden">
-                            <div className="flex items-center justify-between px-4 py-2 border-b border-[#242424] bg-[#0f0f0f]">
-                                <div className="flex items-center gap-2">
-                                    <div className="flex gap-1.5">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-                                        <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-                                        <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-                                    </div>
-                                    <span className="text-[10px] text-[#4A4845] ml-2">
-                                        solution.{language === 'Python' ? 'py' : language === 'JavaScript' ? 'js' : language === 'TypeScript' ? 'ts' : language === 'Java' ? 'java' : language === 'C++' ? 'cpp' : 'go'}
-                                    </span>
-                                </div>
-                                <button
-                                    onClick={() => { setCode(question.starterCode[language] || ''); setSolutionResult(null); setShowOptimal(false) }}
-                                    className="text-[#4A4845] hover:text-[#9A9996] transition"
-                                    title="Reset code"
-                                >
-                                    <RotateCcw className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-
-                            <div className="flex">
-                                <div className="py-3 px-3 select-none border-r border-[#1a1a1a] bg-[#080808]">
-                                    {Array.from({ length: Math.max(lineCount, 20) }, (_, i) => (
-                                        <div key={i} className="text-[11px] text-[#333] font-mono leading-[1.6] text-right pr-1" style={{ minWidth: '1.5rem' }}>
-                                            {i + 1}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <textarea
-                                    ref={textareaRef}
-                                    value={code}
-                                    onChange={e => setCode(e.target.value)}
-                                    spellCheck={false}
-                                    className="flex-1 bg-transparent text-[#30e8bd] font-mono text-[13px] leading-[1.6] p-3 resize-none focus:outline-none min-h-[360px] overflow-auto"
-                                    style={{ tabSize: 4 }}
-                                    onKeyDown={e => {
-                                        if (e.key === 'Tab') {
-                                            e.preventDefault()
-                                            const start = e.currentTarget.selectionStart
-                                            const end = e.currentTarget.selectionEnd
-                                            setCode(code.substring(0, start) + '    ' + code.substring(end))
-                                            requestAnimationFrame(() => {
-                                                if (textareaRef.current) {
-                                                    textareaRef.current.selectionStart = start + 4
-                                                    textareaRef.current.selectionEnd = start + 4
-                                                }
-                                            })
-                                        }
-                                    }}
+                    <div className="space-y-4 flex flex-col h-[800px] lg:h-auto min-h-[600px]">
+                        <div className="flex-1 bg-[#0a0a0a] border border-[#242424] rounded-xl flex flex-col overflow-hidden min-h-[400px]">
+                            <EditorToolbar
+                                language={language}
+                                onLanguageChange={(l) => switchLanguage(l as Language)}
+                                fontSize={fontSize}
+                                onFontSizeChange={setFontSize}
+                                tabSize={tabSize}
+                                onTabSizeChange={setTabSize}
+                                showMinimap={showMinimap}
+                                onMinimapToggle={() => setShowMinimap(!showMinimap)}
+                                onReset={() => { setCode(question.starterCode[language] || ''); setSolutionResult(null); setShowOptimal(false) }}
+                            />
+                            <div className="flex-1 min-h-0 relative">
+                                <CodeEditor
+                                    code={code}
+                                    language={language}
+                                    fontSize={fontSize}
+                                    tabSize={tabSize}
+                                    showMinimap={showMinimap}
+                                    wordWrap="on"
+                                    onChange={(v) => setCode(v || '')}
+                                    onRun={() => checkSolution(question, code, language, false)}
+                                    onSubmit={() => checkSolution(question, code, language, true)}
                                 />
                             </div>
                         </div>
@@ -708,17 +680,31 @@ Return the same JSON structure:
                         {/* Action buttons */}
                         <div className="flex gap-2">
                             <button
-                                onClick={() => checkSolution(question, code, language)}
+                                onClick={() => checkSolution(question, code, language, false)}
+                                disabled={isChecking || !code.trim()}
+                                className="flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-40 bg-[#22262A] text-[#E8E6E3] hover:bg-[#2A2E33] border border-[rgba(255,255,255,0.06)]"
+                            >
+                                {isChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Terminal className="w-4 h-4" />}
+                                Run
+                            </button>
+                            <button
+                                onClick={() => checkSolution(question, code, language, true)}
                                 disabled={isChecking || !code.trim()}
                                 className="flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-40"
                                 style={{ backgroundColor: '#30e8bd', color: '#000', boxShadow: '0 0 15px rgba(48,232,189,0.2)' }}
                             >
                                 {isChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                {isChecking ? 'Evaluating...' : 'Submit'}
+                                Submit
                             </button>
                         </div>
 
-                        {/* Output Panel */}
+                        {/* Test Case Panel */}
+                        <TestCasePanel
+                            testCases={question.testCases}
+                            results={solutionResult?.testResults}
+                        />
+
+                        {/* Output Panel (Complexity + Feedback + Optimal) */}
                         <AnimatePresence>
                             {solutionResult && (
                                 <motion.div
@@ -737,33 +723,8 @@ Return the same JSON structure:
                                         </span>
                                     </div>
 
-                                    {/* Test cases */}
-                                    <div className="p-4 space-y-2">
-                                        {(solutionResult.testResults || []).map((tc, i) => (
-                                            <motion.div
-                                                key={i}
-                                                initial={{ opacity: 0, x: -10 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: i * 0.1 }}
-                                                className={`flex items-start gap-3 p-3 rounded-lg border ${tc.passed
-                                                    ? 'bg-[#30e8bd]/5 border-[#30e8bd]/15'
-                                                    : 'bg-[#f04848]/5 border-[#f04848]/15'
-                                                    }`}
-                                            >
-                                                <div className="mt-0.5">
-                                                    {tc.passed ? <CheckCircle2 className="w-4 h-4 text-[#30e8bd]" /> : <XCircle className="w-4 h-4 text-[#f04848]" />}
-                                                </div>
-                                                <div className="flex-1 min-w-0 font-mono text-xs space-y-0.5">
-                                                    <div><span className="text-[#4A4845]">Input: </span><span className="text-[#9A9996]">{tc.input}</span></div>
-                                                    <div><span className="text-[#4A4845]">Expected: </span><span className="text-[#30e8bd]">{tc.expectedOutput}</span></div>
-                                                    <div><span className="text-[#4A4845]">Got: </span><span className={tc.passed ? 'text-[#30e8bd]' : 'text-[#f04848]'}>{tc.actualOutput}</span></div>
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-
                                     {/* Complexity */}
-                                    <div className="px-4 pb-3 flex gap-3">
+                                    <div className="p-4 flex gap-3">
                                         <div className="flex-1 bg-[#22262A] rounded-lg p-3">
                                             <div className="flex items-center gap-1.5 mb-1"><Clock className="w-3 h-3 text-[#f0b429]" /><span className="text-[10px] text-[#6B6966] uppercase">Time</span></div>
                                             <span className="text-sm font-mono text-[#E8E6E3]">{solutionResult.timeComplexity}</span>
